@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APEX DATA — Analyse de Sessions Circuit</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Share+Tech+Mono&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">A</div>
+    <div class="logo-text">APEX<span> DATA</span></div>
+  </div>
+  <nav>
+    <a class="active" onclick="showPage('dashboard')">Dashboard</a>
+    <a onclick="showPage('sessions')">Sessions</a>
+    <a onclick="showPage('add')">+ Nouvelle Session</a>
+    <a onclick="showPage('compare')">Comparer</a>
+  </nav>
+  <div class="header-right">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="session-count">0 sessions</span>
+    <button class="btn btn-primary" onclick="showPage('add')">▶ ENREGISTRER</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div style="margin-bottom:2rem;margin-top:0.5rem">
+      <div style="font-family:var(--head);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Bienvenue sur</div>
+      <h1 style="font-family:var(--head);font-weight:900;font-size:36px;letter-spacing:0.04em;text-transform:uppercase">Votre Tableau de Bord <span style="color:var(--red)">Pilote</span></h1>
+    </div>
+
+    <div class="dashboard-hero" id="dashboard-stats">
+      <div class="stat-card highlight">
+        <div class="stat-label">Meilleur temps</div>
+        <div class="stat-value" id="stat-best">--:--.---</div>
+        <div class="stat-sub" id="stat-best-circuit">—</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Sessions totales</div>
+        <div class="stat-value" id="stat-sessions">0</div>
+        <div class="stat-sub">toutes pistes</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Tours enregistrés</div>
+        <div class="stat-value" id="stat-laps">0</div>
+        <div class="stat-sub">total cumulé</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Circuits visités</div>
+        <div class="stat-value" id="stat-circuits">0</div>
+        <div class="stat-sub">pistes différentes</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Dernières Sessions</div>
+      <div class="section-line"></div>
+      <div class="section-badge">RÉCENT</div>
+    </div>
+
+    <div id="dashboard-recent"></div>
+
+    <hr class="divider">
+
+    <div class="section-header">
+      <div class="section-title">Progression par Circuit</div>
+      <div class="section-line"></div>
+    </div>
+    <div id="circuit-progress" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem"></div>
+
+  </div>
+
+  <!-- SESSIONS LIST -->
+  <div class="page" id="page-sessions">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;margin-top:0.5rem">
+      <div>
+        <div style="font-family:var(--head);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Historique complet</div>
+        <h1 style="font-family:var(--head);font-weight:900;font-size:32px;letter-spacing:0.04em;text-transform:uppercase">Toutes les <span style="color:var(--red)">Sessions</span></h1>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('add')">+ NOUVELLE SESSION</button>
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+      <select id="filter-circuit" onchange="renderSessions()" style="max-width:200px;background:var(--panel)">
+        <option value="">Tous les circuits</option>
+      </select>
+      <select id="filter-moto" onchange="renderSessions()" style="max-width:200px;background:var(--panel)">
+        <option value="">Toutes les motos</option>
+      </select>
+      <select id="filter-sort" onchange="renderSessions()" style="max-width:200px;background:var(--panel)">
+        <option value="date-desc">Plus récent</option>
+        <option value="date-asc">Plus ancien</option>
+        <option value="time-asc">Meilleur temps</option>
+      </select>
+    </div>
+
+    <div id="sessions-list"></div>
+  </div>
+
+  <!-- ADD SESSION -->
+  <div class="page" id="page-add">
+    <div style="margin-bottom:2rem;margin-top:0.5rem">
+      <div style="font-family:var(--head);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Enregistrement</div>
+      <h1 style="font-family:var(--head);font-weight:900;font-size:32px;letter-spacing:0.04em;text-transform:uppercase">Nouvelle <span style="color:var(--red)">Session</span></h1>
+    </div>
+
+    <div class="form-grid" id="add-form">
+
+      <!-- INFOS GÉNÉRALES -->
+      <div class="form-section">
+        <div class="form-section-title">Infos Circuit</div>
+        <div class="field-group">
+          <label>Circuit *</label>
+          <input type="text" id="f-circuit" placeholder="ex: Circuit de Lédenon" list="circuit-list">
+          <datalist id="circuit-list">
+            <option value="Circuit de Lédenon">
+            <option value="Circuit Paul Ricard">
+            <option value="Circuit de Nogaro">
+            <option value="Bugatti - Le Mans">
+            <option value="Circuit de Dijon-Prenois">
+            <option value="Circuit de Nevers Magny-Cours">
+            <option value="Circuit de Barcelona-Catalunya">
+            <option value="Nürburgring GP">
+            <option value="Spa-Francorchamps">
+            <option value="Autodromo di Misano">
+            <option value="Circuit d'Albi">
+            <option value="Circuit de Clastres">
+            <option value="Anneau du Rhin">
+          </datalist>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Date *</label>
+            <input type="date" id="f-date">
+          </div>
+          <div class="field-group">
+            <label>Type de session</label>
+            <select id="f-type">
+              <option>Roulage libre</option>
+              <option>Chronos</option>
+              <option>Stage pilotage</option>
+              <option>Compétition</option>
+              <option>Test</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Durée (min)</label>
+            <input type="number" id="f-duration" placeholder="20" min="1">
+          </div>
+          <div class="field-group">
+            <label>Nb. de tours</label>
+            <input type="number" id="f-laps" placeholder="15" min="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- MOTO -->
+      <div class="form-section">
+        <div class="form-section-title">Moto</div>
+        <div class="field-group">
+          <label>Modèle de moto *</label>
+          <input type="text" id="f-moto" placeholder="ex: Yamaha R6, Kawasaki ZX-10R..." list="moto-list">
+          <datalist id="moto-list">
+            <option value="Yamaha R6 (2017-2020)">
+            <option value="Yamaha R1 (2020)">
+            <option value="Honda CBR600RR">
+            <option value="Honda CBR1000RR Fireblade">
+            <option value="Kawasaki ZX-6R">
+            <option value="Kawasaki ZX-10R">
+            <option value="Suzuki GSX-R750">
+            <option value="Suzuki GSX-R1000">
+            <option value="Ducati Panigale V2">
+            <option value="Ducati Panigale V4">
+            <option value="BMW S1000RR">
+            <option value="Aprilia RS 660">
+            <option value="MV Agusta F4">
+            <option value="KTM RC 390 Cup">
+          </datalist>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Cylindrée (cc)</label>
+            <input type="number" id="f-cc" placeholder="600">
+          </div>
+          <div class="field-group">
+            <label>Préparation</label>
+            <select id="f-prep">
+              <option>Stock</option>
+              <option>Semi-préparée</option>
+              <option>Préparée</option>
+              <option>Compétition</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Réglages notables</label>
+          <input type="text" id="f-setup" placeholder="ex: Suspension allégée, géométrie +2mm…">
+        </div>
+      </div>
+
+      <!-- MÉTÉO -->
+      <div class="form-section">
+        <div class="form-section-title">Météo &amp; Conditions</div>
+        <div class="field-group">
+          <label>Temps</label>
+          <div class="weather-selector" id="weather-selector">
+            <div class="weather-option active" data-val="☀️ Ensoleillé" onclick="selectWeather(this)">☀️</div>
+            <div class="weather-option" data-val="⛅ Nuageux" onclick="selectWeather(this)">⛅</div>
+            <div class="weather-option" data-val="🌧️ Pluie" onclick="selectWeather(this)">🌧️</div>
+            <div class="weather-option" data-val="⛈️ Orage" onclick="selectWeather(this)">⛈️</div>
+            <div class="weather-option" data-val="🌫️ Brouillard" onclick="selectWeather(this)">🌫️</div>
+          </div>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Temp. air: <span id="temp-air-val">20°C</span></label>
+            <input type="range" id="f-temp-air" min="-5" max="45" value="20" oninput="document.getElementById('temp-air-val').textContent=this.value+'°C'">
+          </div>
+          <div class="field-group">
+            <label>Temp. piste: <span id="temp-track-val">28°C</span></label>
+            <input type="range" id="f-temp-track" min="0" max="65" value="28" oninput="document.getElementById('temp-track-val').textContent=this.value+'°C'">
+          </div>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Humidité: <span id="humi-val">50%</span></label>
+            <input type="range" id="f-humidity" min="0" max="100" value="50" oninput="document.getElementById('humi-val').textContent=this.value+'%'">
+          </div>
+          <div class="field-group">
+            <label>Vent: <span id="wind-val">10 km/h</span></label>
+            <input type="range" id="f-wind" min="0" max="80" value="10" oninput="document.getElementById('wind-val').textContent=this.value+' km/h'">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Piste</label>
+          <select id="f-track-cond">
+            <option>Sèche - Grip optimal</option>
+            <option>Sèche - Grip moyen</option>
+            <option>Humide</option>
+            <option>Mouillée</option>
+            <option>Mixte</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- PNEUMATIQUES -->
+      <div class="form-section">
+        <div class="form-section-title">Pneumatiques</div>
+        <div class="field-group">
+          <label>Marque</label>
+          <input type="text" id="f-tyre-brand" placeholder="ex: Pirelli, Michelin, Dunlop…" list="tyre-brands">
+          <datalist id="tyre-brands">
+            <option value="Pirelli Supercorsa SP">
+            <option value="Pirelli Supercorsa SC">
+            <option value="Michelin Power GP">
+            <option value="Michelin Power Slick">
+            <option value="Dunlop SportSmart TT">
+            <option value="Dunlop KR109 (slick)">
+            <option value="Bridgestone RS11">
+            <option value="Bridgestone R11S">
+            <option value="Continental ContiSportAttack 4">
+          </datalist>
+        </div>
+        <div class="field-group">
+          <label>Compound</label>
+          <div class="tyre-selector" id="tyre-selector">
+            <div class="tyre-option" data-val="S" onclick="selectTyre(this,'s')">S — SOFT</div>
+            <div class="tyre-option" data-val="M" onclick="selectTyre(this,'m')">M — MEDIUM</div>
+            <div class="tyre-option" data-val="H" onclick="selectTyre(this,'h')">H — HARD</div>
+            <div class="tyre-option" data-val="R" onclick="selectTyre(this,'r')">R — RAIN</div>
+          </div>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Pression AV (bar)</label>
+            <input type="number" id="f-press-f" placeholder="2.1" step="0.05" min="1.5" max="3.5">
+          </div>
+          <div class="field-group">
+            <label>Pression AR (bar)</label>
+            <input type="number" id="f-press-r" placeholder="1.9" step="0.05" min="1.5" max="3.5">
+          </div>
+        </div>
+        <div class="form-inline">
+          <div class="field-group">
+            <label>Chauffe-pneus AV</label>
+            <select id="f-warmer-f">
+              <option>Non</option>
+              <option>80°C</option>
+              <option>90°C</option>
+              <option>100°C</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Chauffe-pneus AR</label>
+            <select id="f-warmer-r">
+              <option>Non</option>
+              <option>80°C</option>
+              <option>90°C</option>
+              <option>100°C</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEMPS AU TOUR -->
+      <div class="form-section form-full">
+        <div class="form-section-title">Temps au tour</div>
+        <div class="form-inline-3" style="margin-bottom:1rem">
+          <div class="field-group">
+            <label>Meilleur temps *</label>
+            <input type="text" id="f-best-time" placeholder="1:42.500" pattern="\d{1,2}:\d{2}\.\d{3}">
+          </div>
+          <div class="field-group">
+            <label>Temps moyen</label>
+            <input type="text" id="f-avg-time" placeholder="1:44.200">
+          </div>
+          <div class="field-group">
+            <label>Premier tour</label>
+            <input type="text" id="f-first-lap" placeholder="1:48.000">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Tours détaillés (optionnel — format: 1:42.500 séparés par virgule ou entrée)</label>
+          <textarea id="f-lap-times" placeholder="1:45.234, 1:43.891, 1:42.500, 1:43.012, 1:44.567…"></textarea>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="form-section form-full">
+        <div class="form-section-title">Notes &amp; Ressenti Pilote</div>
+        <div class="form-inline-3">
+          <div class="field-group">
+            <label>Feeling général (/10)</label>
+            <input type="range" id="f-feeling" min="1" max="10" value="7" oninput="document.getElementById('feeling-val').textContent=this.value+'/10'">
+            <div class="temp-display" id="feeling-val">7/10</div>
+          </div>
+          <div class="field-group">
+            <label>Grip avant (/10)</label>
+            <input type="range" id="f-grip-f" min="1" max="10" value="7" oninput="document.getElementById('gripf-val').textContent=this.value+'/10'">
+            <div class="temp-display" id="gripf-val">7/10</div>
+          </div>
+          <div class="field-group">
+            <label>Grip arrière (/10)</label>
+            <input type="range" id="f-grip-r" min="1" max="10" value="7" oninput="document.getElementById('gripr-val').textContent=this.value+'/10'">
+            <div class="temp-display" id="gripr-val">7/10</div>
+          </div>
+        </div>
+        <div class="field-group" style="margin-top:1rem">
+          <label>Commentaires libres</label>
+          <textarea id="f-notes" placeholder="Sensations, points à travailler, incidents, comparaison avec sessions précédentes…" style="min-height:100px"></textarea>
+        </div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="submit-bar">
+        <button class="btn-lg secondary" onclick="resetForm()">RÉINITIALISER</button>
+        <button class="btn-lg primary" onclick="saveSession()">▶ ENREGISTRER LA SESSION</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COMPARE -->
+  <div class="page" id="page-compare">
+    <div style="margin-bottom:2rem;margin-top:0.5rem">
+      <div style="font-family:var(--head);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Analyse</div>
+      <h1 style="font-family:var(--head);font-weight:900;font-size:32px;letter-spacing:0.04em;text-transform:uppercase">Comparer <span style="color:var(--red)">Sessions</span></h1>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
+      <div class="field-group">
+        <label>Session A</label>
+        <select id="comp-a" onchange="renderCompare()">
+          <option value="">— choisir —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Session B</label>
+        <select id="comp-b" onchange="renderCompare()">
+          <option value="">— choisir —</option>
+        </select>
+      </div>
+    </div>
+    <div id="compare-result"></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="page" id="page-detail">
+    <div id="detail-content"></div>
+  </div>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>
